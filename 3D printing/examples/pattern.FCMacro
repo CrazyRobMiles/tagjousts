@@ -1,0 +1,19 @@
+import Part                         # import the Part module from FreeCAD
+from FreeCAD import Base  # import the Base module from FreeCAD
+size = 10 # size of each tile.
+no = 15   # number of tiles on each side
+angle = 45 # angle of each tile
+result = Part.makeBox(size*no,size*no,2)  # make the base
+for x in range(0,no): # loop around rows
+    for y in range(0,no): # loop around the columns
+        pos = Base.Vector(x*size,y*size,0) # position of tile
+        box = Part.makeBox(size,size,size,pos) # make the tile
+        box.rotate(pos,Base.Vector(1,1,0),angle) # rotate the tile
+        result = result.fuse(box)  # add the tile to the result 
+Part.show(result) # show the result
+Gui.SendMsgToActiveView("ViewFit") # scale the display
+Gui.activeDocument().activeView().viewAxometric() # set the view
+
+
+
+

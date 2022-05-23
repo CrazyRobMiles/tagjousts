@@ -1,0 +1,10 @@
+import Part                                     # import the Part module
+
+box = Part.makeBox(10,10,10)            # make a box 10 wide, 10 deep and 10 high
+cylinder = Part.makeCylinder(2,10)      # make a cylinder radius 2 and height 10
+result = box.fuse(cylinder)                  # fuse them together
+Part.show(result)                               # show the result
+Gui.SendMsgToActiveView("ViewFit")    # scale the display
+Gui.activeDocument().activeView().viewAxometric() # set the view
+
+

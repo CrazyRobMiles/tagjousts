@@ -1,0 +1,15 @@
+import Part                                     # import the Part module
+from FreeCAD import Base              # import the Base module
+
+box = Part.makeBox(10,10,10)           # make the box    
+cylinder = Part.makeCylinder(2,10)     # make the cylinder
+cylinder_move = Base.Vector(5,5,10)  # vector containing move direction 
+cylinder.translate(cylinder_move)        # move the cylinder
+result = box.fuse(cylinder)                  # fuse them together
+Part.show(result)                               # show the result
+Gui.SendMsgToActiveView("ViewFit")    # scale the display
+Gui.activeDocument().activeView().viewAxometric() # set the view
+
+
+
+

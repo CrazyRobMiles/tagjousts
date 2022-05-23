@@ -1,0 +1,112 @@
+import Mesh
+import Part
+from FreeCAD import Base
+import sys
+
+import math
+import random
+
+def CutHole(part,x,y,z,holeDiam,depth):
+    holePos = Base.Vector(x,y,z)
+    hole = Part.makeCylinder(holeDiam/2,depth,holePos)
+    part = part.cut(hole)
+    return part   
+
+def getBaseCutShape(diam,pos):
+    diskOrSquare = random.randint(0,2)
+    if diskOrSquare == 1:
+        return Part.makeCylinder(diam/2.0,1,pos)
+    else:
+        baseCutSquare = Part.makeBox(diam,diam,1,pos)
+        baseCutSquare.translate(Base.Vector(-diam/2.0, -diam/2.0,0))
+        return baseCutSquare
+
+def makeDisk(xMake=6,yMake=6,radius=11,baseThickness=1.6,topThickNess=.8,holeDiam=3.25,decorLayers=5,spacing=2):
+    resultList = []
+    layerNumbers = []
+    for l in range(0,decorLayers):
+        layerNumbers.append(l)
+    for x in range(0,xMake):
+        for y in range(0,yMake):
+            print("Making disk",x,",",y)
+            xp = x * (radius*2.0 + spacing) 
+            yp = y * (radius*2.0 + spacing)
+            random.shuffle(layerNumbers)
+            noOfCylinders=random.randint(1,decorLayers-2)
+            diskPos = Base.Vector(xp,yp,-baseThickness)
+            disk = Part.makeCylinder(radius,baseThickness,diskPos)
+            cutShape = getBaseCutShape(4,diskPos)
+            cutShape.translate(Base.Vector(-5,0,0))
+            disk = disk.cut(cutShape)
+            cutShape = getBaseCutShape(4,diskPos)
+            cutShape.translate(Base.Vector(5,0,0))
+            disk = disk.cut(cutShape)
+            cutShape = getBaseCutShape(4,diskPos)
+            cutShape.translate(Base.Vector(0,-5,0))
+            disk = disk.cut(cutShape)
+            decorRadius = radius
+            decorLayer = 0
+            for d in range(0,decorLayers):
+                decorRadius = decorRadius - random.uniform(decorRadius/50.0,decorRadius/20.0)
+                wantCylinder = False
+                for q in range(0,noOfCylinders):
+                    if d==layerNumbers[q]:
+                        wantCylinder = True
+                        break
+                if wantCylinder:
+                    decorationPos = Base.Vector(xp,yp,decorLayer)
+                    decoration = Part.makeCylinder(decorRadius,topThickNess,decorationPos)
+                else:
+                    decorRadius = math.sqrt((decorRadius*decorRadius)/2.0)
+                    decorationPos = Base.Vector(xp-decorRadius,yp-decorRadius,decorLayer)
+                    decoration = Part.makeBox(decorRadius*2.0,decorRadius*2.0,topThickNess,decorationPos)
+                    decoration.rotate(diskPos,Base.Vector(0,0,1),random.randint(0,45))
+                disk = disk.fuse(decoration)
+                decorLayer = decorLayer + topThickNess
+#            for d in range(0,2):
+#                decorationWidth = random.uniform(width/5,width/3)
+#                dpx = xp + (random.uniform(((width-decorationWidth)/4.0)*-1,((width-decorationWidth)/4.0)))
+#                dpy = yp + (random.uniform(((width-decorationWidth)/4.0)*-1,((width-decorationWidth)/4.0)))
+#                decorationPos = Base.Vector(dpx,dpy,0)
+#                decoration = Part.makeBox(decorationWidth,decorationWidth,topThickNess,decorationPos)
+#                disk = disk.fuse(decoration)
+            xpos = xp
+            ypos = yp + radius - (holeDiam+1) 
+            disk = CutHole(disk,xpos,ypos,-(baseThickness),holeDiam,baseThickness+(topThickNess*decorLayers))
+            if len(resultList) == 0:
+                result = disk
+                resultList.append(disk)                
+            else:
+                result = result.fuse(disk)
+    resultList.append(result)
+    return resultList
+   
+def SaveToFiles(list,namePrefix):
+   winName = namePrefix + "W.stl"
+   tagsName = namePrefix + ".stl"
+   box[0].exportStl(winName) 
+   box[1].exportStl(tagsName) 
+
+def MakePlate(width=60,depth=60,baseThickness=1.5,holeXSpacing=5,holeYSpacing=5,holeDiam=2):
+    noOfXHoles = width // holeXSpacing
+    noOfYHoles = depth // holeYSpacing
+    xMargin = (width - ((noOfXHoles-1)*holeXSpacing)) / 2.0
+    yMargin = (depth - ((noOfYHoles-1)*holeYSpacing)) / 2.0
+    trayPos = Base.Vector(0,0,-baseThickness)
+    tray = Part.makeBox(width,depth,baseThickness,trayPos)
+    for x in range(0,noOfXHoles):
+        for y in range(0,noOfYHoles):
+            xpos = xMargin + (x*holeXSpacing)
+            ypos = yMargin + (y*holeYSpacing)
+            tray = CutHole(tray,xpos,ypos,-baseThickness,holeDiam,baseThickness)
+    return tray
+
+
+box = makeDisk(xMake=4,yMake=4)
+Part.show(box[1])
+#SaveToFiles(box,"C:/Users/Rob/OneDrive/2011-2012 Year/3D Printing/RedNoseTags/f5")
+#SaveToFiles(box,"C:/Users/Rob/SkyDrive/2011-2012 Year/3D Printing/RedNoseTags/f18")
+Gui.SendMsgToActiveView("ViewFit")
+Gui.activeDocument().activeView().viewAxometric()
+
+

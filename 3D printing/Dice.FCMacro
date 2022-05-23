@@ -1,0 +1,50 @@
+import Mesh
+import Part
+from FreeCAD import Base
+import sys
+
+import math
+import random
+
+def getBaseCutShape(diam,pos,wantDisk):
+    if wantDisk:
+        diam = diam+2
+        result = Part.makeCylinder(diam/2.0,1,pos)
+        result = result.cut(Part.makeCylinder(diam/2.0-1,1,pos))
+        return result
+    else:
+        baseCutSquare = Part.makeBox(diam,diam,1,pos)
+        baseCutHole = Part.makeBox(diam-2,diam-2,1,pos)
+        baseCutHole.translate(Base.Vector(1, 1,0))
+        baseCutSquare = baseCutSquare.cut(baseCutHole)
+        baseCutSquare.translate(Base.Vector(-diam/2.0, -diam/2.0,0))
+        return baseCutSquare
+
+
+def makeDie(diam=20):
+    hd = diam/2.0
+    pos = Base.Vector(-hd,-hd,-hd)
+    die = Part.makeBox(diam,diam,diam,pos)
+    die = die.makeFillet(3,die.Edges)
+ #  die = die.makeChamfer(1,die.Edges)
+    topPos = Base.Vector(0,0,hd-1)
+    holeCut = getBaseCutShape(diam-7,topPos,True)
+    die = die.cut(holeCut)
+    btmPos = Base.Vector(0,0,-hd)
+    holeCut = getBaseCutShape(diam-7,btmPos,False)
+    die = die.cut(holeCut)
+    middlePos=Base.Vector(0,0,0)
+    holeCut = getBaseCutShape(diam-7,middlePos,False)
+    holeCut.rotate(middlePos,Base.Vector(1,0,0),90)
+    holeCut.translate(Base.Vector(0,hd,0))
+    die = die.cut(holeCut)
+    holeCut = getBaseCutShape(diam-7,middlePos,True)
+    holeCut.rotate(middlePos,Base.Vector(1,0,0),90)
+    holeCut.translate(Base.Vector(0,-hd+1,0))
+    die = die.cut(holeCut)
+    return die
+
+die = makeDie()
+Part.show(die)
+Gui.SendMsgToActiveView("ViewFit")
+Gui.activeDocument().activeView().viewAxometric()
